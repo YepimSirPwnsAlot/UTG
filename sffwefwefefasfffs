@@ -1227,66 +1227,81 @@ OpenUtg.TextWrapped = true
 
 -- Scripts:
 
-local function ZXMCQPU_fake_script() -- Respawn.LocalScript 
-	local script = Instance.new('LocalScript', Respawn)
-
-	function respawn()
-		local char = game.Players.LocalPlayer.Character
-		if char:FindFirstChildOfClass("Humanoid") then char:FindFirstChildOfClass("Humanoid"):ChangeState(15) end
-		char:ClearAllChildren()
-		local newChar = Instance.new("Model")
-		newChar.Parent = workspace
-		game.Players.LocalPlayer.Character = newChar
-		wait()
-		game.Players.LocalPlayer.Character = char
-		newChar:Destroy()
-	end
-	
-	script.Parent.MouseButton1Click:Connect(function()
-		respawn()
-	end)
+-- Utility Functions (Consider placing these in a separate ModuleScript if you have many)
+local function notify(title, text, icon, duration)
+	game:GetService("StarterGui"):SetCore("SendNotification", {
+		Title = title;
+		Text = text;
+		Icon = icon;
+		Duration = duration;
+	})
 end
-coroutine.wrap(ZXMCQPU_fake_script)()
-local function HMRPCLX_fake_script() -- Netless.NetlessScript 
-	local script = Instance.new('LocalScript', Netless)
 
-	script.Parent.MouseButton1Click:Connect(function()
-		for i,v in next, game:GetService("Players").LocalPlayer.Character:GetDescendants() do
-			if v:IsA("BasePart") and v.Name ~="HumanoidRootPart" then 
-				game:GetService("RunService").Heartbeat:connect(function()
-					v.Velocity = Vector3.new(0,35,0)
-					wait(0.5)
-				end)
-			end
+-- Respawn Functionality
+local function setupRespawnButton(button)
+	button.MouseButton1Click:Connect(function()
+		local player = game.Players.LocalPlayer
+		local char = player.Character
+		if char and char:FindFirstChildOfClass("Humanoid") then
+			char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Dead) -- More reliable way to initiate death
+			wait(0.1) -- Small delay to ensure state change
+			player:LoadCharacter() -- Standard way to respawn the player
 		end
-	
-		game:GetService("StarterGui"):SetCore("SendNotification", { 
-			Title = "Notification";
-			Text = "Netless activated";
-			Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
-		Duration = 16;
 	end)
 end
-coroutine.wrap(HTWNV_fake_script)()
-local function EEJMKD_fake_script() -- Main.Drag 
-	local script = Instance.new('LocalScript', Main)
+if script.Parent:FindFirstChild("Respawn") then
+	setupRespawnButton(script.Parent.Respawn)
+end
 
+-- Netless Functionality
+local function setupNetlessButton(button)
+	local isNetlessActive = false
+	button.MouseButton1Click:Connect(function()
+		if not isNetlessActive then
+			isNetlessActive = true
+			local character = game.Players.LocalPlayer.Character
+			if character then
+				for _, part in next, character:GetDescendants() do
+					if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+						local connection = game:GetService("RunService").Heartbeat:Connect(function()
+							part.Velocity = Vector3.new(0, 35, 0)
+						end)
+						-- Consider disconnecting after a short duration or condition to prevent indefinite velocity
+						delay(0.5, function()
+							if connection then
+								connection:Disconnect()
+							end
+						end)
+					end
+				end
+			end
+			notify("Notification", "Netless activated", "rbxthumb://type=Asset&id=5107182114&w=150&h=150", 16)
+		else
+			notify("Notification", "Netless is already active", "rbxthumb://type=Asset&id=5107182114&w=150&h=150", 5)
+		end
+	end)
+end
+if script.Parent:FindFirstChild("Netless") then
+	setupNetlessButton(script.Parent.Netless)
+end
+
+-- Drag Functionality
+local function setupDrag(frame)
 	local UIS = game:GetService('UserInputService')
-	local frame = script.Parent
-	local dragToggle = nil
+	local dragToggle = false
 	local dragSpeed = 0.25
 	local dragStart = nil
 	local startPos = nil
-	
+
 	local function updateInput(input)
 		local delta = input.Position - dragStart
 		local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
 			startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		game:GetService('TweenService'):Create(frame, TweenInfo.new(dragSpeed), {Position = position}):Play()
 	end
-	
+
 	frame.InputBegan:Connect(function(input)
-		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then 
+		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 			dragToggle = true
 			dragStart = input.Position
 			startPos = frame.Position
@@ -1297,7 +1312,7 @@ local function EEJMKD_fake_script() -- Main.Drag
 			end)
 		end
 	end)
-	
+
 	UIS.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			if dragToggle then
@@ -1306,426 +1321,305 @@ local function EEJMKD_fake_script() -- Main.Drag
 		end
 	end)
 end
-coroutine.wrap(EEJMKD_fake_script)()
-local function SLCCQC_fake_script() -- X.LocalScript 
-	local script = Instance.new('LocalScript', X)
+if script.Parent:FindFirstChild("Main") then
+	setupDrag(script.Parent.Main)
+end
 
-	script.Parent.MouseButton1Click:Connect(function()
-		script.Parent.Parent.Parent.Main.Visible = false
-		script.Parent.Parent.Parent.OpenUtg.Visible = true
+-- X Button Functionality
+local function setupCloseButton(button, mainFrame, openButton)
+	button.MouseButton1Click:Connect(function()
+		mainFrame.Visible = false
+		if openButton then
+			openButton.Visible = true
+		end
 	end)
 end
-coroutine.wrap(SLCCQC_fake_script)()
-local function DQSW_fake_script() -- OpenUtg.LocalScript 
-	local script = Instance.new('LocalScript', OpenUtg)
+if script.Parent:FindFirstChild("X") and script.Parent.Parent:FindFirstChild("Main") and script.Parent.Parent:FindFirstChild("OpenUtg") then
+	setupCloseButton(script.Parent.X, script.Parent.Parent.Main, script.Parent.Parent.OpenUtg)
+end
 
-	script.Parent.MouseButton1Click:Connect(function()
-		script.Parent.Parent.Main.Visible = true
-		script.Parent.Visible = false
+-- OpenUtg Button Functionality
+local function setupOpenButton(button, mainFrame)
+	button.MouseButton1Click:Connect(function()
+		if mainFrame then
+			mainFrame.Visible = true
+		end
+		button.Visible = false
 	end)
 end
-coroutine.wrap(DQSW_fake_script)()
-local function NJGRIXS_fake_script() -- UltimateTrollingGuiV6.LocalScript 
-	local script = Instance.new('LocalScript', UltimateTrollingGuiV6)
-
-	script.Parent.Main:TweenPosition(
-		UDim2.new(0.382, 0, 0.181, 0)
-	)
+if script.Parent:FindFirstChild("OpenUtg") and script.Parent.Parent:FindFirstChild("Main") then
+	setupOpenButton(script.Parent.OpenUtg, script.Parent.Parent.Main)
 end
-coroutine.wrap(NJGRIXS_fake_script)()
 
-Cleetus.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/5kQnXdtK"))()
-end)
-
-JohnDoe.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/gXmVPzqN"))()
-end)
-
-TheDankEngine.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/YEMQqFaG"))()
-end)
-
-Banisher.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/fdjZJ3fQ"))()
-end)
-
-Illuminati.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/LCXjGQEM"))()
-end)
-
-MineCraftSteve.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/8LTjpdSX"))()
-end)
-
-Goner.MouseButton1Click:Connect(function()
-
-wait(0.3)
-
-local m = Instance.new("Message")
-m.Parent = Workspace
-m.Text = "Script doesnt work, sorry bud."
-wait(3)
-m:Destroy()
-end)
-
-HolyWrench.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/cnQUHZ8A"))()
-end)
-
-Baseplate.MouseButton1Click:Connect(function()
-
-wait(0.3)
-
-local pt = Instance.new("Part")
-pt.BrickColor = BrickColor.new("Silver")
-pt.Anchored = true
-pt.CanCollide = true
-pt.BottomSurface = "Weld"
-pt.Parent = workspace
-pt.Name = (math.random(1,1000000))
-pt.Size = Vector3.new(1000, 1, 1000)
-end)
-
-FlingGUI.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/cG6QRFnH"))()
-end)
-
-TOPk3k.MouseButton1Click:Connect(function()
-
-wait(0.3)
-
-local m = Instance.new("Message")
-m.Parent = Workspace
-m.Text = "Script doesnt work, sorry bud."
-wait(3)
-m:Destroy()
-end)
-
-KFC.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/MZ0dSGmJ"))()
-end)
-
-TrollingGUI.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/Aa1zVWcN"))()
-end)
-
-InfYield.MouseButton1Click:Connect(function()
-
-wait(0.3)
-
-local m = Instance.new("Message")
-m.Parent = Workspace
-m.Text = "Script doesnt work, sorry bud."
-wait(3)
-m:Destroy()
-end)
-
-SuTart.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/DTPGrf2C"))()
-end)
-
-Backrooms.MouseButton1Click:Connect(function()
-
-wait(0.3)
-
-local m = Instance.new("Message")
-m.Parent = Workspace
-m.Text = "Script doesnt work, sorry bud."
-wait(3)
-m:Destroy()
-end)
-
-AK47.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/dyeMMNYn"))()
-end)
-
-NexPluviaAdmin.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/dZC6dJLb"))()
-end)
-
-FunnyVest.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGetAsync("https://pastebin.com/N9uMLvGc"))()
-end)
-
-c00lify.MouseButton1Click:Connect(function()
-decalID = 158118263
-function exPro(root)
-for _, v in pairs(root:GetChildren()) do
-if v:IsA("Decal") and v.Texture ~= "http://www.roblox.com/asset/?id="..decalID then
-v.Parent = nil
-elseif v:IsA("BasePart") then
-v.Material = "Plastic"
-v.Transparency = 0
-local One = Instance.new("Decal", v)
-local Two = Instance.new("Decal", v)
-local Three = Instance.new("Decal", v)
-local Four = Instance.new("Decal", v)
-local Five = Instance.new("Decal", v)
-local Six = Instance.new("Decal", v)
-One.Texture = "http://www.roblox.com/asset/?id="..decalID
-Two.Texture = "http://www.roblox.com/asset/?id="..decalID
-Three.Texture = "http://www.roblox.com/asset/?id="..decalID
-Four.Texture = "http://www.roblox.com/asset/?id="..decalID
-Five.Texture = "http://www.roblox.com/asset/?id="..decalID
-Six.Texture = "http://www.roblox.com/asset/?id="..decalID
-One.Face = "Front"
-Two.Face = "Back"
-Three.Face = "Right"
-Four.Face = "Left"
-Five.Face = "Top"
-Six.Face = "Bottom"
+-- UltimateTrollingGuiV6 Animation
+local function animateGui(frame, targetPosition)
+	if frame and frame:IsA("GuiObject") then
+		frame:TweenPosition(targetPosition)
+	end
 end
-exPro(v)
+if script.Parent:FindFirstChild("UltimateTrollingGuiV6") then
+	animateGui(script.Parent.UltimateTrollingGuiV6.Main, UDim2.new(0.382, 0, 0.181, 0))
 end
+
+-- External Script Loading (Use with Caution)
+local function loadExternalScript(button, url)
+	button.MouseButton1Click:Connect(function()
+		local success, result = pcall(game.HttpGetAsync, game, url)
+		if success then
+			local f = loadstring(result)
+			if f then
+				f()
+			else
+				warn("Error loading script from:", url, "- loadstring failed.")
+			end
+		else
+			warn("Error fetching script from:", url, "-", result)
+		end
+	end)
 end
-function asdf(root)
-for _, v in pairs(root:GetChildren()) do
-asdf(v)
+
+if script.Parent:FindFirstChild("Cleetus") then loadExternalScript(script.Parent.Cleetus, "https://pastebin.com/5kQnXdtK") end
+if script.Parent:FindFirstChild("JohnDoe") then loadExternalScript(script.Parent.JohnDoe, "https://pastebin.com/gXmVPzqN") end
+if script.Parent:FindFirstChild("TheDankEngine") then loadExternalScript(script.Parent.TheDankEngine, "https://pastebin.com/YEMQqFaG") end
+if script.Parent:FindFirstChild("Banisher") then loadExternalScript(script.Parent.Banisher, "https://pastebin.com/fdjZJ3fQ") end
+if script.Parent:FindFirstChild("Illuminati") then loadExternalScript(script.Parent.Illuminati, "https://pastebin.com/LCXjGQEM") end
+if script.Parent:FindFirstChild("MineCraftSteve") then loadExternalScript(script.Parent.MineCraftSteve, "https://pastebin.com/8LTjpdSX") end
+if script.Parent:FindFirstChild("HolyWrench") then loadExternalScript(script.Parent.HolyWrench, "https://pastebin.com/cnQUHZ8A") end
+if script.Parent:FindFirstChild("FlingGUI") then loadExternalScript(script.Parent.FlingGUI, "https://pastebin.com/cG6QRFnH") end
+if script.Parent:FindFirstChild("KFC") then loadExternalScript(script.Parent.KFC, "https://pastebin.com/MZ0dSGmJ") end
+if script.Parent:FindFirstChild("TrollingGUI") then loadExternalScript(script.Parent.TrollingGUI, "https://pastebin.com/Aa1zVWcN") end
+if script.Parent:FindFirstChild("SuTart") then loadExternalScript(script.Parent.SuTart, "https://pastebin.com/DTPGrf2C") end
+if script.Parent:FindFirstChild("AK47") then loadExternalScript(script.Parent.AK47, "https://pastebin.com/dyeMMNYn") end
+if script.Parent:FindFirstChild("NexPluviaAdmin") then loadExternalScript(script.Parent.NexPluviaAdmin, "https://pastebin.com/dZC6dJLb") end
+if script.Parent:FindFirstChild("FunnyVest") then loadExternalScript(script.Parent.FunnyVest, "https://pastebin.com/N9uMLvGc") end
+if script.Parent:FindFirstChild("KrystalDance") then loadExternalScript(script.Parent.KrystalDance, "https://pastebin.com/raw/FV3HLmTH") end
+if script.Parent:FindFirstChild("Stand") then loadExternalScript(script.Parent.Stand, "https://pastebin.com/raw/RZUwatYV") end
+if script.Parent:FindFirstChild("ServerAdmin") then loadExternalScript(script.Parent.ServerAdmin, "https://rawgithubusercontent.com/ONEReverseCard/My-Scripts/main/Netless%20Server%20Adminmd") end
+if script.Parent:FindFirstChild("BanHammer") then loadExternalScript(script.Parent.BanHammer, "https://rawgithubusercontent.com/killermaster9999mega/thing/main/READMEmd") end
+if script.Parent:FindFirstChild("ParkourGod") then loadExternalScript(script.Parent.ParkourGod, "https://pastebin.com/raw/xwmnPkvY") end
+if script.Parent:FindFirstChild("Sniper") then loadExternalScript(script.Parent.Sniper, "https://pastebin.com/raw/dtz7qGBg") end
+if script.Parent:FindFirstChild("Ender") then loadExternalScript(script.Parent.Ender, "https://pastebin.com/raw/bndCgupK") end
+if script.Parent:FindFirstChild("VrSword") then loadExternalScript(script.Parent.VrSword, "https://pastebin.com/raw/M9pnqjtn") end
+if script.Parent:FindFirstChild("Caducus") then loadExternalScript(script.Parent.Caducus, "https://pastebin.com/raw/jfryBKds") end
+if script.Parent:FindFirstChild("ElioBlasio") then loadExternalScript(script.Parent.ElioBlasio, "https://pastebin.com/raw/xvBXu6Yc") end
+if script.Parent:FindFirstChild("Minigun") then loadExternalScript(script.Parent.Minigun, "https://pastebin.com/raw/sK9EUPE6") end
+if script.Parent:FindFirstChild("Car") then loadExternalScript(script.Parent.Car, "https://rawgithubusercontent.com/MonkoTubeYT/carscript/master/!carscriptlua") end
+if script.Parent:FindFirstChild("Carnage") then loadExternalScript(script.Parent.Carnage, "https://pastebin.com/raw/Ntg4PB33") end
+if script.Parent:FindFirstChild("SegsDoll") then loadExternalScript(script.Parent.SegsDoll, "https://pastebin.com/raw/dB6DGBB6") end
+if script.Parent:FindFirstChild("Memeus") then loadExternalScript(script.Parent.Memeus, "https://pastebin.com/raw/cCMJ9C82") end
+if script.Parent:FindFirstChild("Pen") then loadExternalScript(script.Parent.Pen, "https://pastebin.com/raw/1qcpeuDm") end
+if script.Parent:FindFirstChild("Xester") then loadExternalScript(script.Parent.Xester, "https://pastebin.com/raw/RPwyPvEi") end
+if script.Parent:FindFirstChild("Broomstick") then loadExternalScript(script.Parent.Broomstick, "https://pastebin.com/raw/xyHiNwtg") end
+if script.Parent:FindFirstChild("Headless") then loadExternalScript(script.Parent.Headless, "https://pastebin.com/raw/mssZBy9j") end
+if script.Parent:FindFirstChild("HeadHold") then loadExternalScript(script.Parent.HeadHold, "https://pastebin.com/raw/jsZHrVFf") end
+if script.Parent:FindFirstChild("Goopie") then loadExternalScript(script.Parent.Goopie, "https://pastebin.com/raw/fKLm580i") end
+if script.Parent:FindFirstChild("OrangeJustice") then loadExternalScript(script.Parent.OrangeJustice, "https://pastebin.com/raw/Efg0DgkP") end
+if script.Parent:FindFirstChild("Floss") then loadExternalScript(script.Parent.Floss, "https://pastebin.com/raw/JfyvWHLf") end
+if script.Parent:FindFirstChild("DistractDance") then loadExternalScript(script.Parent.DistractDance, "https://pastebin.com/raw/2tJBN38N") end
+if script.Parent:FindFirstChild("RussainKick") then loadExternalScript(script.Parent.RussainKick, "https://pastebin.com/raw/1P37qYeV") end
+if script.Parent:FindFirstChild("InsanityPowers") then loadExternalScript(script.Parent.InsanityPowers, "https://pastebin.com/raw/ygWAZh5A") end
+if script.Parent:FindFirstChild("Zen") then loadExternalScript(script.Parent.Zen, "https://raw.githubusercontent.com/o5u3/Zen/main/ZenFlingFE.txt") end
+if script.Parent:FindFirstChild("HellRobotics") then loadExternalScript(script.Parent.HellRobotics, "https://pastebin.com/raw/cF4yBbWs") end
+if script.Parent:FindFirstChild("Pillow") then loadExternalScript(script.Parent.Pillow, "https://pastebin.com/raw/RbKLMpdt") end
+if script.Parent:FindFirstChild("Pp") then loadExternalScript(script.Parent.Pp, "https://pastebin.com/raw/MMDGHMq1") end
+if script.Parent:FindFirstChild("RainbowKing") then loadExternalScript(script.Parent.RainbowKing, "https://pastebin.com/raw/Xfxx4qJ0") end
+if script.Parent:FindFirstChild("TouchKill") then loadExternalScript(script.Parent.TouchKill, "https://pastebin.com/raw/KaYHHvh7") end
+if script.Parent:FindFirstChild("TakeTheL") then loadExternalScript(script.Parent.TakeTheL, "https://pastebin.com/raw/VkWkuyzc") end
+if script.Parent:FindFirstChild("BlackHole") then loadExternalScript(script.Parent.BlackHole, "https://pastebin.com/raw/4zY4XvvA") end
+if script.Parent:FindFirstChild("JhonDoe") then loadExternalScript(script.Parent.JhonDoe, "https://pastebin.com/raw/DwhVGxTs") end
+if script.Parent:FindFirstChild("Neko") then loadExternalScript(script.Parent.Neko, "https://pastebin.com/raw/7i7CsTPe") end
+if script.Parent:FindFirstChild("Boobs") then loadExternalScript(script.Parent.Boobs, "https://pastebin.com/raw/8ASG9gWB") end
+if script.Parent:FindFirstChild("Rtx") then loadExternalScript(script.Parent.Rtx, "https://pastebin.com/raw/Ba5A2mXj") end
+if script.Parent:FindFirstChild("VR") then loadExternalScript(script.Parent.VR, "https://pastebin.com/raw/uZWAvTxC") end
+if script.Parent:FindFirstChild("Gun") then loadExternalScript(script.Parent.Gun, "https://pastebin.com/raw/0Jv3udmi") end
+if script.Parent:FindFirstChild("Titain") then loadExternalScript(script.Parent.Titain, "https://pastebin.com/raw/qSMz7Uiu") end
+if script.Parent:FindFirstChild("PixelCar") then loadExternalScript(script.Parent.PixelCar, "https://pastebin.com/raw/1Nmes8yC") end
+if script.Parent:FindFirstChild("Eggdog") then loadExternalScript(script.Parent.Eggdog, "https://pastebin.com/raw/rkAD6D4J") end
+
+-- Goner Button Functionality
+local function setupGonerButton(button)
+	button.MouseButton1Click:Connect(function()
+		wait(0.3)
+		local m = Instance.new("Message")
+		m.Parent = workspace
+		m.Text = "Script doesnt work, sorry bud."
+		wait(3)
+		m:Destroy()
+	end)
 end
+if script.Parent:FindFirstChild("Goner") then
+	setupGonerButton(script.Parent.Goner)
 end
-exPro(game.Workspace)
-asdf(game.Workspace)
 
-local s = Instance.new("Sky")
-s.Name = "Sky"
-s.Parent = game.Lighting
-local skyboxID = 158118263
-s.SkyboxBk = "http://www.roblox.com/asset/?id="..skyboxID
-s.SkyboxDn = "http://www.roblox.com/asset/?id="..skyboxID
-s.SkyboxFt = "http://www.roblox.com/asset/?id="..skyboxID
-s.SkyboxLf = "http://www.roblox.com/asset/?id="..skyboxID
-s.SkyboxRt = "http://www.roblox.com/asset/?id="..skyboxID
-s.SkyboxUp = "http://www.roblox.com/asset/?id="..skyboxID
-game.Lighting.TimeOfDay = 12	
-
-for i, v in pairs(game.Players:GetChildren()) do
-emit = Instance.new("ParticleEmitter")
-emit.Parent = v.Character.Torso
-emit.Texture = "http://www.roblox.com/asset/?id=158118263"
-emit.VelocitySpread = 20
+-- Baseplate Button Functionality
+local function setupBaseplateButton(button)
+	button.MouseButton1Click:Connect(function()
+		wait(0.3)
+		local pt = Instance.new("Part")
+		pt.BrickColor = BrickColor.new("Silver")
+		pt.Anchored = true
+		pt.CanCollide = true
+		pt.BottomSurface = Enum.SurfaceType.Weld
+		pt.Parent = workspace
+		pt.Name = tostring(math.random(1, 1000000))
+		pt.Size = Vector3.new(1000, 1, 1000)
+	end)
 end
-for i, v in pairs(game.Players:GetChildren()) do
-emit = Instance.new("ParticleEmitter")
-emit.Parent = v.Character.Torso
-emit.Texture = "http://www.roblox.com/asset/?id=158118263"
-emit.VelocitySpread = 20
+if script.Parent:FindFirstChild("Baseplate") then
+	setupBaseplateButton(script.Parent.Baseplate)
 end
-for i, v in pairs(game.Players:GetChildren()) do
-emit = Instance.new("ParticleEmitter")
-emit.Parent = v.Character.Torso
-emit.Texture = "http://www.roblox.com/asset/?id=158118263"
-emit.VelocitySpread = 20
-end	
-end)
 
-Nuke.MouseButton1Click:Connect(function()
--- made by sina157
- 
--- alert
-a = game.Lighting.Ambient
-music = Instance.new("Sound")
-music.Parent = game.Workspace
-music.SoundId = "rbxassetid://199837904"
-music.Volume = 10
-music.PlaybackSpeed = 0.9
-music.Playing = true
-h = Instance.new("Hint")
-h.Parent = game.Workspace 
-h.Text = "Tactical Nuke Incoming!!!"
-wait(3)
- 
-for i =1 , 3 do
-	wait(0.5)
-	game.Lighting.Ambient = Color3.new(255, 0, 0)
-	wait(0.5)
-	game.Lighting.Ambient = a
+-- TOPk3k Button Functionality
+local function setupTOPk3kButton(button)
+	button.MouseButton1Click:Connect(function()
+		wait(0.3)
+		local m = Instance.new("Message")
+		m.Parent = workspace
+		m.Text = "Script doesnt work, sorry bud."
+		wait(3)
+		m:Destroy()
+	end)
 end
-h:Remove()
-cce = Instance.new("ColorCorrectionEffect",game.Lighting)
-cce.Brightness = 0
-for i=1, 10 do
-wait(0.1)
-cce.Brightness = cce.Brightness + 0.1
+if script.Parent:FindFirstChild("TOPk3k") then
+	setupTOPk3kButton(script.Parent.TOPk3k)
 end
-getplayers = game.Players:GetChildren()
-for a=1, #getplayers do
-wait(0.01)
-char = getplayers[a].Character
-char.Humanoid.Health = 0
+
+-- InfYield Button Functionality
+local function setupInfYieldButton(button)
+	button.MouseButton1Click:Connect(function()
+		wait(0.3)
+		local m = Instance.new("Message")
+		m.Parent = workspace
+		m.Text = "Script doesnt work, sorry bud."
+		wait(3)
+		m:Destroy()
+	end)
 end
-wait(1)
-cce:Destroy()
-end)
+if script.Parent:FindFirstChild("InfYield") then
+	setupInfYieldButton(script.Parent.InfYield)
+end
 
-KrystalDance.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/FV3HLmTH"))()
-end)
+-- Backrooms Button Functionality
+local function setupBackroomsButton(button)
+	button.MouseButton1Click:Connect(function()
+		wait(0.3)
+		local m = Instance.new("Message")
+		m.Parent = workspace
+		m.Text = "Script doesnt work, sorry bud."
+		wait(3)
+		m:Destroy()
+	end)
+end
+if script.Parent:FindFirstChild("Backrooms") then
+	setupBackroomsButton(script.Parent.Backrooms)
+end
 
-Stand.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/RZUwatYV"))()
-end)
+-- c00lify Button Functionality
+local function setupC00lifyButton(button)
+	button.MouseButton1Click:Connect(function()
+		local decalID = 158118263
+		local function exPro(root)
+			for _, v in pairs(root:GetChildren()) do
+				if v:IsA("Decal") and v.Texture ~= "http://www.roblox.com/asset/?id="..decalID then
+					v:Destroy()
+				elseif v:IsA("BasePart") then
+					v.Material = Enum.Material.Plastic
+					v.Transparency = 0
+					local One = Instance.new("Decal", v)
+					local Two = Instance.new("Decal", v)
+					local Three = Instance.new("Decal", v)
+					local Four = Instance.new("Decal", v)
+					local Five = Instance.new("Decal", v)
+					local Six = Instance.new("Decal", v)
+					One.Texture = "http://www.roblox.com/asset/?id="..decalID
+					Two.Texture = "http://www.roblox.com/asset/?id="..decalID
+					Three.Texture = "http://www.roblox.com/asset/?id="..decalID
+					Four.Texture = "http://www.roblox.com/asset/?id="..decalID
+					Five.Texture = "http://www.roblox.com/asset/?id="..decalID
+					Six.Texture = "http://www.roblox.com/asset/?id="..decalID
+					One.Face = Enum.NormalId.Front
+					Two.Face = Enum.NormalId.Back
+					Three.Face = Enum.NormalId.Right
+					Four.Face = Enum.NormalId.Left
+					Five.Face = Enum.NormalId.Top
+					Six.Face = Enum.NormalId.Bottom
+				end
+				exPro(v)
+			end
+		end
+		exPro(game.Workspace)
 
-ServerAdmin.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGet("https://rawgithubusercontent.com/ONEReverseCard/My-Scripts/main/Netless%20Server%20Adminmd"))()
-end)
+		local s = Instance.new("Sky")
+		s.Name = "Sky"
+		s.Parent = game.Lighting
+		local skyboxID = 158118263
+		s.SkyboxBk = "http://www.roblox.com/asset/?id="..skyboxID
+		s.SkyboxDn = "http://www.roblox.com/asset/?id="..skyboxID
+		s.SkyboxFt = "http://www.roblox.com/asset/?id="..skyboxID
+		s.SkyboxLf = "http://www.roblox.com/asset/?id="..skyboxID
+		s.SkyboxRt = "http://www.roblox.com/asset/?id="..skyboxID
+		s.SkyboxUp = "http://www.roblox.com/asset/?id="..skyboxID
+		game.Lighting.TimeOfDay = 12
 
-BanHammer.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://rawgithubusercontent.com/killermaster9999mega/thing/main/READMEmd"))()
-end)
+		for _, player in pairs(game.Players:GetChildren()) do
+			if player.Character and player.Character:FindFirstChild("Torso") then
+				for i = 1, 3 do -- Create multiple emitters
+					local emit = Instance.new("ParticleEmitter")
+					emit.Parent = player.Character.Torso
+					emit.Texture = "http://www.roblox.com/asset/?id=158118263"
+					emit.VelocitySpread = 20
+				end
+			end
+		end
+	end)
+end
+if script.Parent:FindFirstChild("c00lify") then
+	setupC00lifyButton(script.Parent.c00lify)
+end
 
-ParkourGod.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/xwmnPkvY"))()
-end)
+-- Nuke Button Functionality
+local function setupNukeButton(button)
+	button.MouseButton1Click:Connect(function()
+		-- made by sina157
 
-Sniper.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/dtz7qGBg"))()
-end)
+		-- alert
+		local ambientColor = game.Lighting.Ambient
+		local music = Instance.new("Sound")
+		music.Parent = workspace
+		music.SoundId = "rbxassetid://199837904"
+		music.Volume = 10
+		music.PlaybackSpeed = 0.9
+		music.Playing = true
+		local hint = Instance.new("Hint")
+		hint.Parent = workspace
+		hint.Text = "Tactical Nuke Incoming!!!"
+		wait(3)
 
-Ender.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/bndCgupK"))()
-end)
-
-VrSword.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/M9pnqjtn"))()
-end)
-
-Caducus.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/jfryBKds"))()
-end)
-
-ElioBlasio.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/xvBXu6Yc"))()
-end)
-
-Minigun.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/sK9EUPE6"))()
-end)
-
-Car.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGet('https://rawgithubusercontent.com/MonkoTubeYT/carscript/master/!carscriptlua',true))()
-end)
-
-Carnage.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGet('https://pastebin.com/raw/Ntg4PB33',true))()
-end)
-
-SegsDoll.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGet('https://pastebin.com/raw/dB6DGBB6',true))()
-end)
-
-Memeus.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/cCMJ9C82"))()
-end)
-
-Pen.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/1qcpeuDm"))()
-end)
-
-Xester.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/RPwyPvEi"))()
-end)
-
-Broomstick.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/xyHiNwtg"))()
-end)
-
-Headless.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/mssZBy9j"))()
-end)
-
-HeadHold.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/jsZHrVFf"))()
-end)
-
-Goopie.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/fKLm580i"))()
-end)
-
-OrangeJustice.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/Efg0DgkP"))()
-end)
-
-Floss.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/JfyvWHLf"))()
-end)
-
-DistractDance.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/2tJBN38N"))()
-end)
-
-RussainKick.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/1P37qYeV"))()
-end)
-
-InsanityPowers.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/ygWAZh5A"))()
-end)
-
-Zen.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/o5u3/Zen/main/ZenFlingFE.txt"))()
-end)
-
-HellRobotics.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/cF4yBbWs"))()
-end)
-
-Pillow.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/RbKLMpdt"))()
-end)
-
-Pp.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/MMDGHMq1"))()
-end)
-
-RainbowKing.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/Xfxx4qJ0"))()
-end)
-
-TouchKill.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/KaYHHvh7"))()
-end)
-
-TakeTheL.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/VkWkuyzc"))()
-end)
-
-BlackHole.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/4zY4XvvA"))()
-end)
-
-JhonDoe.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/DwhVGxTs"))()
-end)
-
-Neko.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/7i7CsTPe"))()
-end)
-
-Boobs.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/8ASG9gWB"))()
-end)
-
-Rtx.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/Ba5A2mXj"))()
-end)
-
-VR.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/uZWAvTxC"))()
-end)
-
-Gun.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/0Jv3udmi"))()	
-end)
-
-Titain.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGet('https://pastebin.com/raw/qSMz7Uiu',true))()	
-end)
-
-PixelCar.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/1Nmes8yC"))()
-end)
-
-Eggdog.MouseButton1Click:Connect(function()
-	loadstring(game:HttpGetAsync("https://pastebin.com/raw/rkAD6D4J"))()
-end)
+		for i = 1, 3 do
+			wait(0.5)
+			game.Lighting.Ambient = Color3.new(1, 0, 0) -- Use values between 0 and 1
+			wait(0.5)
+			game.Lighting.Ambient = ambientColor
+		end
+		hint:Destroy()
+		local cce = Instance.new("ColorCorrectionEffect", game.Lighting)
+		cce.Brightness = 0
+		for i = 1, 10 do
+			wait(0.1)
+			cce.Brightness = cce.Brightness + 0.1
+		end
+		local players = game.Players:GetChildren()
+		for _, player in ipairs(players) do
+			wait(0.01)
+			local char = player.Character
+			if char and char:FindFirstChild("Humanoid") then
+				char.Humanoid.Health = 0
+			end
+		end
+		wait(1)
+		cce:Destroy()
+	end)
+end
+if script.Parent:FindFirstChild("Nuke") then
+	setupNukeButton(script.Parent.Nuke)
+end
