@@ -238,7 +238,7 @@ kohls.TextColor3 = Color3.fromRGB(255, 255, 255)
 kohls.TextSize = 20.000
 kohls.TextWrapped = true
 kohls.TextXAlignment = Enum.TextXAlignment.Left
-kohls.MouseButton1Down:Connect(function)
+kohls.MouseButton1Down:Connect(function()
 game:GetObjects("rbxassetid://157676089")[1].Parent=game.Workspace
 end)
 
