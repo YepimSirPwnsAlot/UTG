@@ -163,6 +163,7 @@ Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 Main.BorderSizePixel = 0
 Main.Position = UDim2.new(0.382268965, 0, 1.18099999, 0)
 Main.Size = UDim2.new(0, 451, 0, 534)
+Main.Visible = true
 
 UIGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(137, 0, 254)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(223, 0, 255))}
 UIGradient.Parent = Main
@@ -203,7 +204,7 @@ Welcome2.BorderSizePixel = 0
 Welcome2.Position = UDim2.new(0.0245891828, 0, 0.114000015, 0)
 Welcome2.Size = UDim2.new(0, 428, 0, 36)
 Welcome2.Font = Enum.Font.SourceSansBold
-Welcome2.Text = "DM me on discord yepimsirpwnsalot for sneak peeks!"
+Welcome2.Text = "Respawn has been fixed, its now BreakJoints()"
 Welcome2.TextColor3 = Color3.fromRGB(0, 0, 0)
 Welcome2.TextSize = 20.000
 
@@ -3184,7 +3185,13 @@ Respawn.Text = "Respawn"
 Respawn.TextColor3 = Color3.fromRGB(0,128,0)
 Respawn.TextSize = 30
 Respawn.MouseButton1Down:Connect(function()
-	player:LoadCharacter()
+local Players = game:GetService("Players")
+
+local player = game.Players.LocalPlayer
+
+if player and player.Character then
+	player.Character:BreakJoints()
+end
 end)
 
 UICorner_69.CornerRadius = UDim.new(1, 0)
@@ -3210,12 +3217,10 @@ AntiFling.Parent = Main
 AntiFling.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 AntiFling.Position = UDim2.new(0.0245891828, 0, 0.915730357, 0)
 AntiFling.Size = UDim2.new(0, 305, 0, 35)
-AntiFling.Font = Enum.Font.SourceSansBold
+AntiFling.Font = Enum.Font.SourceSans
 AntiFling.Text = "Me"
 AntiFling.TextColor3 = Color3.fromRGB(0, 0, 0)
-AntiFling.TextScaled = true
-AntiFling.TextSize = 14.000
-AntiFling.TextWrapped = true
+AntiFling.TextSize = 25
 
 UICorner_71.CornerRadius = UDim.new(1, 0)
 UICorner_71.Parent = AntiFling
@@ -3261,7 +3266,7 @@ subtext.BackgroundTransparency = 1
 subtext.Position = UDim2.new(0, 0, 1, -10)
 subtext.Size = UDim2.new(1, 0, 0, 20)
 subtext.Font = Enum.Font.SourceSansBold
-subtext.Text = "CLICK TO TOGGLE"
+subtext.Text = "(Click to toggle)"
 subtext.TextColor3 = Color3.fromRGB(255, 255, 255)
 subtext.TextStrokeColor3 = Color3.fromRGB(255, 0, 0)
 subtext.TextStrokeTransparency = 0
@@ -3301,6 +3306,49 @@ task.spawn(function()
 		nextIndex = (nextIndex % #colors) + 1
 	end
 end)
+
+local allowedUsers = {
+	"xRajin_Reap3r",
+	"Guest4554_YT",
+	"Fartman42121cool",
+	"9AMHD",
+	"Offsaleboy2021",
+	"mrflimflam",
+	"Wolf_playz132",
+	"Darthsoldier5",
+}
+
+local player = game.Players.LocalPlayer
+local gui = script.Parent
+
+local function isAllowed(name)
+	for _, allowedName in ipairs(allowedUsers) do
+		if name:lower() == allowedName:lower() then
+			return true
+		end
+	end
+	return false
+end
+
+if isAllowed(player.Name) then
+	gui.Parent = player:WaitForChild("PlayerGui")
+else
+	gui:Destroy()
+end
+
+local main = gui:FindFirstChild("Main")
+if main then
+	player.Chatted:Connect(function(message)
+		if message:lower() == "/open utg" then
+			if main.Visible then
+				main.Visible = false
+			else
+				task.wait(4.4)
+				main.Visible = true
+			end
+		end
+	end)
+end
 
 AntiFling.Text = game.Players.LocalPlayer.Name
 
