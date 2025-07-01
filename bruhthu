@@ -3393,7 +3393,6 @@ task.spawn(function()
 		Color3.fromRGB(255, 165, 0),
 		Color3.fromRGB(0, 255, 0),
 		Color3.fromRGB(255, 51, 153),
-		Color3.fromRGB(
 	}
 
 	local currentIndex = 1
